@@ -20,22 +20,14 @@ const base = import.meta.env.BASE_URL.replace(/\/$/, '');
 ---
 
 <Base title={d.name}>
-  <p class="note">
-    Public evidence as of {d.lastChecked.toISOString().slice(0, 10)}. A description, not a judgment of the company
-    or a recommendation.
-    {d.draft && <strong> Draft: not yet verified, not shown on the live site.</strong>}
-    {!d.draft && d.reviewNote && <strong> {d.reviewNote}</strong>}
-  </p>
+  <h1 class="p-name">{d.name}</h1>
 
-  <h1>{d.name}</h1>
-
-  <p>
+  <p class="p-tags">
     {d.areas.map((a) => <span class="tag">{AREA_LABEL[a]}</span>)}
     <span class="tag">{d.type}</span>
     <span class="tag">{d.country}</span>
     {d.foundedYear && <span class="tag">Founded {d.foundedYear}</span>}
     <span class="tag tag-where" title={basis.text}>{basis.label}</span>
-    <a href={`${base}/criteria/#tags`}><small>What does this tag mean?</small></a>
   </p>
 
   <div class="profile">
@@ -63,9 +55,20 @@ const base = import.meta.env.BASE_URL.replace(/\/$/, '');
       </ol>
     </section>
   </div>
+
+  <p class="note p-foot">
+    Public evidence as of {d.lastChecked.toISOString().slice(0, 10)}. A description, not a judgment of the company
+    or a recommendation.
+    {d.draft && <strong> Draft: not yet verified, not shown on the live site.</strong>}
+    {!d.draft && d.reviewNote && <strong> {d.reviewNote}</strong>}
+    <a href={`${base}/criteria/#tags`}>What does the tag mean?</a>
+  </p>
 </Base>
 
 <style is:global>
+  .p-name { text-align: center; margin-top: 1.5rem; }
+  .p-tags { text-align: center; }
+  .p-foot { margin-top: 2rem; }
   /* The opening animation on a profile: the problem, then milk -> proteins -> peptides -> insert.
      About 28 s, then it rests. The base styles are the finished picture, so reduced-motion readers see that. */
   .scene { margin: 1rem 0 0; }
@@ -229,6 +232,7 @@ const base = import.meta.env.BASE_URL.replace(/\/$/, '');
     });
 
     var idx = 0;
+    var ready = false;
     function go(i, focus) {
       idx = Math.max(0, Math.min(steps.length - 1, i));
       steps.forEach(function (s, n) { s.classList.toggle('current', n === idx); });
@@ -239,7 +243,9 @@ const base = import.meta.env.BASE_URL.replace(/\/$/, '');
       top.querySelector('.count').textContent = 'Step ' + (idx + 1) + ' of ' + steps.length + ' · ' + steps[idx].getAttribute('data-label');
       nav.querySelector('.prev').disabled = idx === 0;
       nav.querySelector('.next').disabled = idx === steps.length - 1;
-      try { history.replaceState(null, '', '#step-' + steps[idx].getAttribute('data-step')); } catch (e) {}
+      // Only write the step into the address after the reader moves. Doing it at load made the browser
+      // scroll to that step and hide the company name.
+      if (ready) { try { history.replaceState(null, '', '#step-' + steps[idx].getAttribute('data-step')); } catch (e) {} }
       if (focus) {
         var h = steps[idx].querySelector('h2');
         if (h) { h.setAttribute('tabindex', '-1'); h.focus({ preventScroll: true }); }
@@ -272,5 +278,6 @@ const base = import.meta.env.BASE_URL.replace(/\/$/, '');
     var start = 0;
     steps.forEach(function (s, n) { if (location.hash === '#step-' + s.getAttribute('data-step')) start = n; });
     go(start, false);
+    ready = true;
   })();
 </script>
