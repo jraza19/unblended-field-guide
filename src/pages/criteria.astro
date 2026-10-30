@@ -1,0 +1,58 @@
+---
+import Base from '../layouts/Base.astro';
+import { AREA_LABEL, EVIDENCE_BASIS_LABEL, PRODUCT_CHECK_LABEL } from '../lib/labels';
+---
+
+<Base title="How I choose companies">
+  <h1>How I choose companies</h1>
+  <p>
+    This guide is curated by one person with a health science and data science background. It describes
+    what public evidence shows about each company. It does not rank companies or say which are better.
+  </p>
+
+  <h2>What gets listed</h2>
+  <ul>
+    <li><strong>In scope.</strong> The company works on one of the condition areas below.</li>
+    <li><strong>Early.</strong> It has raised no more than a Series A. There is no age limit, because a long-running company working on something hard is not a bad sign. The founding year is always shown.</li>
+    <li><strong>Not a supplement or consumer-wellness product.</strong> The guide is about products that follow a path from research toward a regulated or evidence-backed product.</li>
+    <li><strong>Real and traceable.</strong> Every claim on a profile has a numbered source. Anything the company reports itself is labeled.</li>
+  </ul>
+  <p>
+    A few companies past that stage may appear, clearly labeled, as a contrast to the early ones.
+    My relationship to each company, if any, is stated on its profile.
+  </p>
+
+  <h2>Condition areas</h2>
+  <p>
+    {Object.values(AREA_LABEL).map((a) => <span class="tag">{a}</span>)}
+  </p>
+  <p>A company can fall under several areas, so counts across areas should not be added up.</p>
+
+  <h2 id="tags">What the tags mean</h2>
+  <p>Each profile has two tags. They describe where a company sits. They are not scores.</p>
+  <h3>Where the support comes from</h3>
+  <dl>
+    {Object.values(EVIDENCE_BASIS_LABEL).map((e) => <><dt>{e.label}</dt><dd>{e.text}</dd></>)}
+  </dl>
+  <p>
+    A company that applies established evidence is not behind one that runs its own trials. It is a
+    different route. To judge how well the existing evidence fits a product, ask whether the cited studies
+    tested the same kind of treatment, in the same kind of people, delivered the same way, with outcomes
+    that matter to patients.
+  </p>
+  <h3>What has been tested so far</h3>
+  <ol>
+    {Object.values(PRODUCT_CHECK_LABEL).map((l) => <li>{l}</li>)}
+  </ol>
+  <p>
+    The order shows how products usually move toward people. It is not an order of quality, and many
+    products, such as software and services, follow other routes.
+  </p>
+
+  <h2>Where the facts come from</h2>
+  <p>
+    Medical background, such as how common a condition is, comes from independent sources and never from
+    a company. Each source on a profile says how I read it: in full, abstract only, through a summary, or
+    as a search I ran in a public registry.
+  </p>
+</Base>

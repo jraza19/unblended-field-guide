@@ -1,0 +1,136 @@
+---
+// Provisional look. Colors and type are placeholders until the design direction is chosen.
+const { title, wide = false } = Astro.props;
+const base = import.meta.env.BASE_URL.replace(/\/$/, '');
+---
+
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>{title} · A Field Guide to Women's Health Tech</title>
+    <style is:global>
+      :root {
+        color-scheme: light dark;
+        --bg: #fbf6ee; --surface: #fffdf9; --text: #231c26; --muted: #6b6270;
+        --line: #e6dccb; --accent: #0d6b64; --accent-ink: #ffffff; --accent-soft: #e0f0ec; --focus: #7a2e5e; --plum-soft: #f3e4ec;
+        --serif: 'Iowan Old Style', 'Palatino Linotype', Palatino, Georgia, 'Times New Roman', serif;
+      }
+      @media (prefers-color-scheme: dark) {
+        :root:not([data-theme='light']) {
+          --bg: #17141b; --surface: #211d27; --text: #f1edf5; --muted: #a59fb0;
+          --line: #373040; --accent: #5fd0c3; --accent-ink: #10201e; --accent-soft: #1d3330; --focus: #e3a0c6; --plum-soft: #33232d;
+        }
+      }
+      :root[data-theme='dark'] {
+        --bg: #17141b; --surface: #211d27; --text: #f1edf5; --muted: #a59fb0;
+        --line: #373040; --accent: #5fd0c3; --accent-ink: #10201e; --accent-soft: #1d3330; --focus: #e3a0c6; --plum-soft: #33232d;
+      }
+      * { box-sizing: border-box; }
+      body { font: 18px/1.65 ui-sans-serif, system-ui, -apple-system, 'Segoe UI', sans-serif; margin: 0;
+        padding: 0 1rem; background: var(--bg); color: var(--text); }
+      main { max-width: var(--w, 42rem); margin: 0 auto; padding-block: 1rem 4rem; }
+      nav { max-width: var(--w, 42rem); margin: 0 auto; padding-block: 1rem; display: flex; gap: 1.25rem; flex-wrap: wrap; font-size: 0.95rem; }
+      a { color: var(--accent); }
+      :focus-visible { outline: 3px solid var(--focus); outline-offset: 2px; }
+      h1, h2, h3 { font-family: var(--serif); letter-spacing: -0.01em; }
+      h1 { font-size: 2.6rem; line-height: 1.12; margin: 0.5rem 0; }
+      h2 { font-size: 1.75rem; line-height: 1.25; margin: 0 0 1rem; }
+      .site-head { border-bottom: 1px solid var(--line); margin: 0 -1rem 1.5rem; padding: 0 1rem; }
+      .site-head nav { padding-block: 0.9rem; align-items: baseline; }
+      .brand { font-family: var(--serif); font-size: 1.1rem; font-weight: 700; color: var(--text); text-decoration: none; margin-right: auto; }
+      .brand::before { content: ''; display: inline-block; width: 0.7em; height: 0.7em; border-radius: 50%; background: var(--focus); margin-right: 0.5em; }
+      nav a:not(.brand) { text-decoration: none; }
+      nav a:not(.brand):hover { text-decoration: underline; }
+      .site-foot { max-width: var(--w, 42rem); margin: 0 auto; padding: 1.5rem 0 3rem; border-top: 1px solid var(--line); color: var(--muted); font-size: 0.85rem; }
+      .note { color: var(--muted); font-size: 0.88rem; margin: 0.5rem 0; }
+      .tag { display: inline-block; border: 1px solid var(--line); background: var(--surface); border-radius: 999px;
+        padding: 0.05rem 0.7rem; margin: 0 0.3rem 0.4rem 0; font-size: 0.85rem; }
+      .tag-where { border-color: var(--accent); background: var(--accent-soft); }
+      .step { box-shadow: 0 1px 0 var(--line), 0 12px 30px -18px rgba(35, 28, 38, 0.25); }
+      .step h2 { color: var(--focus); }
+
+      /* definition icons */
+      .term { white-space: nowrap; }
+      .term-i { display: inline-block; width: 1.15em; height: 1.15em; margin-left: 0.25em; border: 1.5px solid var(--accent);
+        border-radius: 50%; font: italic 700 0.72em/1.1em Georgia, serif; text-align: center; text-decoration: none; vertical-align: 0.1em; }
+      .term-def { display: block; white-space: normal; font-size: 0.9rem; line-height: 1.5; margin: 0.5rem 0; padding: 0.7rem 0.9rem;
+        background: var(--accent-soft); border-radius: 10px; }
+      .term-def[hidden] { display: none; }
+      sup.ref a { text-decoration: none; font-size: 0.8em; }
+
+      /* buttons */
+      .btn { font: inherit; font-size: 0.95rem; padding: 0.55rem 1.1rem; border-radius: 999px; border: 1.5px solid var(--accent);
+        background: transparent; color: var(--accent); cursor: pointer; }
+      .btn.primary { background: var(--accent); color: var(--accent-ink); }
+      .btn[disabled] { opacity: 0.35; cursor: default; }
+      .linklike { font: inherit; font-size: 0.85rem; background: none; border: 0; color: var(--muted); text-decoration: underline; cursor: pointer; padding: 0; }
+
+      /* the click-through deck */
+      .profile.deck-on .step { display: none; }
+      .profile.deck-on .step.current, .profile.deck-on.show-all .step { display: block; }
+      .step { background: var(--surface); border: 1px solid var(--line); border-radius: 18px; padding: 1.75rem 1.75rem 1.5rem;
+        margin-bottom: 1rem; min-height: 16rem; }
+      .step h2:focus { outline: none; }
+      .deck-top { display: flex; align-items: center; gap: 1rem; flex-wrap: wrap; margin-bottom: 0.75rem; font-size: 0.9rem; color: var(--muted); }
+      .bar { flex: 1 1 8rem; height: 6px; background: var(--line); border-radius: 99px; overflow: hidden; }
+      .bar span { display: block; height: 100%; background: var(--accent); width: 0; transition: width 0.2s; }
+      .deck-nav { display: flex; align-items: center; justify-content: space-between; gap: 1rem; margin-top: 0.5rem; }
+      .dots { display: flex; gap: 0.5rem; }
+      .dots button { width: 0.8rem; height: 0.8rem; border-radius: 50%; border: 1.5px solid var(--accent); background: transparent; padding: 0; cursor: pointer; }
+      .dots button[aria-current='step'] { background: var(--accent); }
+      .deck-nav[hidden] { display: none; }
+
+      /* guess first, then reveal */
+      .reveal, .path-widget { background: var(--accent-soft); border-radius: 14px; padding: 1rem 1.25rem; margin: 1rem 0; }
+      .reveal-q { font-weight: 600; margin: 0 0 0.75rem; }
+      .reveal-a[hidden], .path-feedback[hidden] { display: none; }
+      .stages { list-style: none; padding: 0; margin: 0 0 0.75rem; display: grid; gap: 0.5rem; grid-template-columns: repeat(auto-fit, minmax(11rem, 1fr)); }
+      .stage { width: 100%; font: inherit; font-size: 0.9rem; text-align: left; padding: 0.6rem 0.8rem; border-radius: 10px; cursor: pointer;
+        border: 1.5px solid var(--line); background: var(--surface); color: var(--text); }
+      .stage.chosen { border-color: var(--text); }
+      .stage.answer { border-color: var(--accent); background: var(--accent); color: var(--accent-ink); }
+      ol.refs li { margin-bottom: 0.6rem; font-size: 0.92rem; }
+
+      /* multiple choice, then a short roadmap */
+      .quiz { background: var(--accent-soft); border-radius: 14px; padding: 1rem 1.25rem; margin: 1rem 0; }
+      .choices { list-style: none; padding: 0; margin: 0 0 0.75rem; display: grid; gap: 0.5rem; }
+      .choice { width: 100%; font: inherit; font-size: 0.95rem; text-align: left; padding: 0.6rem 0.9rem; border-radius: 10px; cursor: pointer;
+        border: 1.5px solid var(--line); background: var(--surface); color: var(--text); }
+      .choice:hover { border-color: var(--accent); }
+      .choice.chosen { border-color: var(--text); }
+      .choice.correct { border-color: var(--accent); background: var(--accent); color: var(--accent-ink); }
+      .quiz-fb[hidden], .fb[hidden] { display: none; }
+      .quiz-more { font-weight: 600; margin: 1rem 0 0.5rem; }
+      .roadmap { list-style: none; counter-reset: rm; padding: 0; margin: 0 0 0.5rem; display: grid; gap: 0.6rem; grid-template-columns: repeat(auto-fit, minmax(10rem, 1fr)); }
+      .roadmap li { counter-increment: rm; background: var(--surface); border: 1px solid var(--line); border-radius: 12px; padding: 0.7rem 0.9rem; font-size: 0.88rem; line-height: 1.4; display: flex; flex-direction: column; gap: 0.25rem; }
+      .roadmap li::before { content: counter(rm); width: 1.6rem; height: 1.6rem; border-radius: 50%; background: var(--focus); color: var(--bg);
+        display: flex; align-items: center; justify-content: center; font: 700 0.85rem var(--serif); }
+      .small { font-size: 0.82rem; color: var(--muted); }
+    </style>
+  </head>
+  <body style={`--w: ${wide ? '72rem' : '42rem'}`}>
+    <header class="site-head">
+      <nav>
+        <a class="brand" href={`${base}/`}>A Field Guide to Women's Health Tech</a>
+        <a href={`${base}/`}>Companies</a>
+        <a href={`${base}/criteria/`}>How I choose</a>
+        <a href={`${base}/glossary/`}>Glossary</a>
+      </nav>
+    </header>
+    <main><slot /></main>
+    <footer class="site-foot">A free guide to how research becomes a product in women's health. Every claim has a numbered source.</footer>
+    <script is:inline>
+      // The "i" is a normal link to the glossary. With JavaScript it opens the definition in place.
+      document.addEventListener('click', function (e) {
+        var a = e.target.closest && e.target.closest('.term-i');
+        if (!a) return;
+        e.preventDefault();
+        var def = a.nextElementSibling;
+        var open = def.hasAttribute('hidden');
+        if (open) def.removeAttribute('hidden'); else def.setAttribute('hidden', '');
+        a.setAttribute('aria-expanded', open ? 'true' : 'false');
+      });
+    </script>
+  </body>
+</html>

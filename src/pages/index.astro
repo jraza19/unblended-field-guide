@@ -1,0 +1,732 @@
+---
+import { getCollection } from 'astro:content';
+import Base from '../layouts/Base.astro';
+import { AREA_LABEL, PATH_STAGES, TYPE_LABEL } from '../lib/labels';
+import { AREA_ICON } from '../lib/icons';
+
+const all = await getCollection('startups');
+// Drafts show only while developing, or when PUBLIC_SHOW_DRAFTS=1.
+const showDrafts = import.meta.env.DEV || import.meta.env.PUBLIC_SHOW_DRAFTS === '1';
+const startups = all
+  .filter((s) => showDrafts || !s.data.draft)
+  .sort((a, b) => a.data.name.localeCompare(b.data.name, 'en', { sensitivity: 'base' }));
+const base = import.meta.env.BASE_URL.replace(/\/$/, '');
+
+// Every number on this page is quoted from a source I read. Numbered in order of first use.
+const refs = [
+  {
+    citation:
+      'National Academies of Sciences, Engineering, and Medicine, news release, 5 Dec 2024: "To Advance Women’s Health Research, NIH Should Form New Institute and Congress Should Appropriate New Funding."',
+    url: 'https://www.nationalacademies.org/news/to-advance-womens-health-research-nih-should-form-new-institute-and-congress-should-appropriate-new-funding-says-report',
+    use: 'Read in full',
+  },
+  {
+    citation: 'Nature Reviews Bioengineering, 2024 editorial: "Funding research on women’s health."',
+    url: 'https://www.nature.com/articles/s44222-024-00253-7',
+    use: 'Read in full. The editorial cites other sources for these figures (Moley 2024 for the 2020 R&D split; Horne & Missmer 2022 for endometriosis).',
+  },
+  {
+    citation: 'Institute for Health Metrics and Evaluation (IHME), news release, 21 Jul 2026: "People are living longer but spending more years in poor health" (Global Burden of Disease 2023 study, The Lancet Public Health).',
+    url: 'https://www.healthdata.org/news-events/newsroom/news-releases/people-are-living-longer-spending-more-years-poor-health',
+    use: 'Press release read in full. The journal paper itself not read.',
+  },
+  {
+    citation: 'IHME, news release, 1 May 2024: "The Lancet Public Health: Global study reveals stark differences between females and males in major causes of disease burden" (Global Burden of Disease 2021 study).',
+    url: 'https://www.healthdata.org/news-events/newsroom/news-releases/lancet-public-health-global-study-reveals-stark-differences',
+    use: 'Press release read in full. The journal paper itself not read.',
+  },
+  {
+    citation: 'Partnership for Maternal, Newborn & Child Health (PMNCH, WHO), summary page for the World Economic Forum and McKinsey Health Institute report "Closing the Women\u2019s Health Gap."',
+    url: 'https://pmnch.who.int/resources/publications/m/item/closing-the-women-s-health-gap',
+    use: 'Summary page read in full. The report itself not read.',
+  },
+  {
+    citation: 'World Health Organization, "Maternal mortality" fact sheet, 7 April 2025.',
+    url: 'https://www.who.int/news-room/fact-sheets/detail/maternal-mortality',
+    use: 'Read in full',
+  },
+];
+
+// Each grid is 100 squares = 100% of its own total. Shares are quoted as the sources give them;
+// the sources I read did not give the dollar totals, so none are shown.
+const bars = [
+  {
+    big: '8.8%',
+    total: 'all US government (NIH) research grant spending, 2013–2023',
+    parts: [{ label: 'Women’s health research', pct: 8.8, kind: 'a' }],
+    note: 'Share that focused on women’s health research.',
+    ref: 1,
+  },
+  {
+    big: '4% + 1%',
+    total: 'global R&D funding, 2020',
+    parts: [
+      { label: 'Women’s cancers', pct: 4, kind: 'a' },
+      { label: 'All other women-specific conditions', pct: 1, kind: 'b' },
+    ],
+    note: 'A quarter of the 1% went to fertility.',
+    ref: 2,
+  },
+  {
+    big: '3%',
+    total: 'all digital health investment, 2021',
+    parts: [{ label: 'Femtech companies', pct: 3, kind: 'a' }],
+    note: 'About $2.5 billion went to femtech.',
+    ref: 2,
+  },
+].map((b) => {
+  // cell i covers the range [i, i+1) of the 100%; a part fills the share of the cell it overlaps
+  let start = 0;
+  const spans = b.parts.map((p) => {
+    const s = { ...p, start, end: start + p.pct };
+    start += p.pct;
+    return s;
+  });
+  const cells = Array.from({ length: 100 }, (_, i) =>
+    spans
+      .map((p) => {
+        const from = Math.max(p.start, i);
+        const to = Math.min(p.end, i + 1);
+        return to > from ? { kind: p.kind, x: (from - i) * 14, w: (to - from) * 14 } : null;
+      })
+      .filter(Boolean),
+  );
+  return { ...b, cells };
+});
+
+// Source [1] (National Academies) and [2] (Nature editorial) for these.
+const FUND_W = 300;
+const fundTotal = 4000 + 11400 + 315; // $ millions: $4B institute + $11.4B agency-wide fund + $315M workforce
+let fx = 0;
+const fund = [
+  { label: '$4 billion', what: 'A new institute for women’s health', kind: 'a', v: 4000 },
+  { label: '$11.4 billion', what: 'A fund for women’s health research across the agency', kind: 'b', v: 11400 },
+  { label: '$315 million', what: 'Building the research workforce', kind: 'c', v: 315 },
+].map((f) => {
+  const w = (f.v / fundTotal) * FUND_W;
+  const r = { ...f, x: fx, w };
+  fx += w;
+  return r;
+});
+const ten = (on) => Array.from({ length: 10 }, (_, i) => ({ x: 12 + i * 28, on: i < on }));
+const SPLIT_W = 300;
+let sx = 0;
+const split = [
+  { label: 'Women’s cancers', pct: '4%', v: 4, kind: 'a' },
+  { label: 'Fertility (a quarter of the 1%)', pct: '0.25%', v: 0.25, kind: 'c' },
+  { label: 'All other women-specific conditions', pct: '0.75%', v: 0.75, kind: 'b' },
+].map((f) => {
+  const w = (f.v / 5) * SPLIT_W;
+  const r = { ...f, x: sx, w };
+  sx += w;
+  return r;
+});
+const femtechBar = bars[2];
+const founders = ten(7);
+const maternal = ten(9); // "about 9 in 10": WHO says about 92% of maternal deaths were in low and lower-middle-income countries
+// IHME 2026 [3]: average years lived in poor health ("morbidity gap"), 2023.
+const poorHealth = [
+  { label: 'Women', v: 12.1, kind: 'b' },
+  { label: 'Men', v: 9.3, kind: 'm' },
+];
+const poorHealthMax = 12.1;
+// IHME 2024 [4]: age-standardised DALYs per 100,000, ages 10+, 2021.
+const burden = [
+  { name: 'Low back pain', f: 1265, m: 787 },
+  { name: 'Depressive disorders', f: 1019, m: 671 },
+];
+const burdenMax = 1265;
+
+const byArea = Object.keys(AREA_LABEL).map((id) => ({
+  id,
+  label: AREA_LABEL[id],
+  items: startups.filter((s) => s.data.areas.includes(id)),
+}));
+
+const byType = Object.keys(TYPE_LABEL).map((id) => ({
+  id,
+  label: TYPE_LABEL[id],
+  items: startups.filter((s) => s.data.type === id),
+}));
+
+// Each company is placed on the path by its "product check" tag.
+const stages = PATH_STAGES.map((st) => ({ ...st, companies: startups.filter((s) => s.data.productCheck === st.id) }));
+---
+
+<Base title="Home" wide>
+  <script is:inline>document.documentElement.classList.add('js');</script>
+
+  <svg width="0" height="0" style="position:absolute" aria-hidden="true" focusable="false">
+    <defs>
+      <g id="person">
+        <circle cx="0" cy="9" r="7"></circle>
+        <path d="M-9 38V28a9 9 0 0 1 18 0V38Z"></path>
+      </g>
+    </defs>
+  </svg>
+
+  <header class="hero">
+    <div class="hero-text">
+      <p class="eyebrow">A free field guide</p>
+      <h1>How does women's health research become a product?</h1>
+      <p class="lede">
+        Follow the story from the funding gap to the early-stage companies working on it.
+      </p>
+      <p class="hero-links">
+        <a class="btn primary" href="#gap">Start the story ↓</a>
+        <a class="btn" href="#find">Skip to the companies</a>
+      </p>
+    </div>
+  </header>
+
+  <div class="story">
+    <section class="chap" data-n="1" id="gap">
+      <div class="chap-body">
+        <p class="eyebrow">The gap</p>
+        <h2 class="chap-h">Women's health research has long been underfunded.<sup class="ref"><a href="#home-ref-1">[1]</a><a href="#home-ref-2">[2]</a></sup></h2>
+        <p class="note">Each grid is out of a different total.
+          <span class="unit"><svg viewBox="0 0 14 14" class="unit-sq" aria-hidden="true"><rect width="14" height="14" rx="2" class="bar-bg" /></svg> 1 square = 1%</span></p>
+        <div class="grids">
+          {
+            bars.slice(0, 2).map((b) => (
+              <div class="grid-card">
+                <div class="big-num">{b.big}</div>
+                <div class="bar-of">of {b.total} <sup class="ref"><a href={`#home-ref-${b.ref}`}>[{b.ref}]</a></sup></div>
+                <svg viewBox="0 0 83 337" role="img" class="waffle"
+                  aria-label={`${b.parts.map((p) => `${p.label}: ${p.pct}%`).join('; ')}, out of 100% = ${b.total}`}>
+                  {b.cells.map((parts, i) => {
+                    const cx = (i % 5) * 17;
+                    const cy = Math.floor(i / 5) * 17;
+                    return (
+                      <g transform={`translate(${cx} ${cy})`}>
+                        <rect width="14" height="14" rx="2" class="bar-bg" />
+                        {parts.map((p) => <rect x={p.x} width={p.w} height="14" rx="2" class={`bar-${p.kind} fill`} style={`transition-delay:${0.15 + i * 0.12}s`} />)}
+                      </g>
+                    );
+                  })}
+                </svg>
+                <div class="bar-legend col">
+                  {b.parts.map((p) => <span class={`key key-${p.kind}`}>{p.label}: <strong>{p.pct}%</strong></span>)}
+                </div>
+                <div class="note">{b.note}</div>
+              </div>
+            ))
+          }
+        </div>
+      </div>
+    </section>
+
+    <section class="chap" data-n="2" id="common">
+      <div class="chap-body">
+        <p class="eyebrow">Why it matters</p>
+        <h2 class="chap-h">Women live longer, but spend more of those years in poor health.<sup class="ref"><a href="#home-ref-3">[3]</a></sup></h2>
+        <div class="tabs" data-tabs>
+          <div class="tabbar" role="tablist" aria-label="Women's health in numbers">
+            <button type="button" role="tab" class="tab" id="t2-1" aria-controls="p2-1" aria-selected="true">Years in poor health</button>
+            <button type="button" role="tab" class="tab" id="t2-2" aria-controls="p2-2" aria-selected="false">Common conditions</button>
+            <button type="button" role="tab" class="tab" id="t2-3" aria-controls="p2-3" aria-selected="false">Pregnancy deaths</button>
+            <button type="button" role="tab" class="tab" id="t2-4" aria-controls="p2-4" aria-selected="false">$1 trillion</button>
+          </div>
+
+          <div class="panel on" role="tabpanel" id="p2-1" aria-labelledby="t2-1">
+            <div class="panel-text">
+              <div class="big">12.1 vs 9.3</div>
+              <p class="one">Years a woman and a man spend in poor health, world average, 2023.<sup class="ref"><a href="#home-ref-3">[3]</a></sup></p>
+              <details class="more"><summary>More</summary><p>Women live longer than men almost everywhere, and spend more years in poor health in every region and level of development the study looked at.</p></details>
+            </div>
+            <div class="panel-vis">
+              <div class="hbars">
+                {
+                  poorHealth.map((r) => (
+                    <div class="hb-row">
+                      <span class="hb-label">{r.label}</span>
+                      <span class="hb-track"><span class={`hb hb-${r.kind}`} style={`width:${(r.v / poorHealthMax) * 100}%`}></span></span>
+                      <strong class="hb-val">{r.v} yrs</strong>
+                    </div>
+                  ))
+                }
+              </div>
+            </div>
+          </div>
+
+          <div class="panel" role="tabpanel" id="p2-2" aria-labelledby="t2-2" hidden>
+            <div class="panel-text">
+              <p class="one lone">Women lose more years to low back pain and depression than men do.<sup class="ref"><a href="#home-ref-4">[4]</a></sup></p>
+              <p class="small">Years of life lost to illness and early death per 100,000 people aged 10 and older, 2021. Leaves out conditions only one sex gets, such as gynaecological ones.</p>
+            </div>
+            <div class="panel-vis">
+              {
+                burden.map((b) => (
+                  <div class="hb-group">
+                    <div class="hb-name">{b.name}</div>
+                    {[['Women', b.f, 'w'], ['Men', b.m, 'm']].map(([label, v, k]) => (
+                      <div class="hb-row">
+                        <span class="hb-label">{label}</span>
+                        <span class="hb-track"><span class={`hb hb-${k === 'w' ? 'b' : 'm'}`} style={`width:${(v / burdenMax) * 100}%`}></span></span>
+                        <strong class="hb-val">{v.toLocaleString('en-US')}</strong>
+                      </div>
+                    ))}
+                  </div>
+                ))
+              }
+            </div>
+          </div>
+
+          <div class="panel" role="tabpanel" id="p2-3" aria-labelledby="t2-3" hidden>
+            <div class="panel-text">
+              <div class="big">about 260,000</div>
+              <p class="one">Women died during and after pregnancy and childbirth in 2023. The WHO says most could have been prevented.<sup class="ref"><a href="#home-ref-6">[6]</a></sup></p>
+            </div>
+            <div class="panel-vis">
+              <svg viewBox="0 0 290 40" role="img" class="vis-svg people" aria-label="About 9 in 10 of these deaths were in low and lower-middle-income countries">
+                {maternal.map((c) => <use href="#person" x={c.x} class={c.on ? 'bar-a' : 'bar-bg'} />)}
+              </svg>
+              <p class="small">About 92% were in low and lower-middle-income countries.</p>
+            </div>
+          </div>
+
+          <div class="panel" role="tabpanel" id="p2-4" aria-labelledby="t2-4" hidden>
+            <div class="panel-text">
+              <div class="big">$1 trillion</div>
+              <p class="one">Possible yearly boost to the world economy by 2040 from closing women's health gaps.<sup class="ref"><a href="#home-ref-5">[5]</a></sup></p>
+              <details class="more"><summary>More</summary><p>A World Economic Forum and McKinsey Health Institute estimate, as described by the WHO partnership PMNCH, which says it is likely too low. The same report estimates the time women spend in poor health could fall by almost two-thirds, adding about seven healthy days per woman each year.</p></details>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="chap" data-n="3" id="money">
+      <div class="chap-body">
+        <p class="eyebrow">The money</p>
+        <h2 class="chap-h">Where does the money go, and how much reaches femtech?</h2>
+        <div class="tabs" data-tabs>
+          <div class="tabbar" role="tablist" aria-label="Where the money goes">
+            <button type="button" role="tab" class="tab" id="t3-1" aria-controls="p3-1" aria-selected="true">The 5%</button>
+            <button type="button" role="tab" class="tab" id="t3-2" aria-controls="p3-2" aria-selected="false">Femtech's share</button>
+            <button type="button" role="tab" class="tab" id="t3-3" aria-controls="p3-3" aria-selected="false">Who founds it</button>
+            <button type="button" role="tab" class="tab" id="t3-4" aria-controls="p3-4" aria-selected="false">What it would take</button>
+          </div>
+
+          <div class="panel on" role="tabpanel" id="p3-1" aria-labelledby="t3-1">
+            <div class="panel-text">
+              <div class="big">5%</div>
+              <p class="one">of global research funding went to women's health in 2020. Four of those five points went to women's cancers.<sup class="ref"><a href="#home-ref-2">[2]</a></sup></p>
+              <details class="more"><summary>How I split the 5%</summary><p>The source gives 4% for women's cancers and 1% for all other women-specific conditions, with a quarter of the 1% going to fertility. The 0.25% and 0.75% are my arithmetic from that.</p></details>
+            </div>
+            <div class="panel-vis">
+              <svg viewBox={`0 0 ${SPLIT_W} 30`} role="img" class="vis-svg" aria-label="Of the 5%: women's cancers 4%, fertility 0.25%, all other women-specific conditions 0.75%">
+                {split.map((f) => <rect x={f.x} y="0" width={f.w} height="30" class={`bar-${f.kind}`} />)}
+              </svg>
+              <div class="bar-legend col">
+                {split.map((f) => <span class={`key key-${f.kind}`}><strong>{f.pct}</strong> {f.label}</span>)}
+              </div>
+            </div>
+          </div>
+
+          <div class="panel" role="tabpanel" id="p3-2" aria-labelledby="t3-2" hidden>
+            <div class="panel-text">
+              <div class="big">about 3%</div>
+              <p class="one">of all digital health investment in 2021 went to femtech, about $2.5 billion.<sup class="ref"><a href="#home-ref-2">[2]</a></sup></p>
+              <details class="more"><summary>More</summary><p>Reproductive health dominates the sector. Femtech is largely funded by venture capital firms in which male partners dominate, and women's health is often dismissed as "too niche."</p></details>
+            </div>
+            <div class="panel-vis">
+              <svg viewBox="0 0 83 337" role="img" class="waffle" aria-label="Femtech companies: 3% of all digital health investment, out of 100%">
+                {femtechBar.cells.map((parts, i) => (
+                  <g transform={`translate(${(i % 5) * 17} ${Math.floor(i / 5) * 17})`}>
+                    <rect width="14" height="14" rx="2" class="bar-bg" />
+                    {parts.map((p) => <rect x={p.x} width={p.w} height="14" rx="2" class={`bar-${p.kind} fill`} style={`transition-delay:${0.15 + i * 0.12}s`} />)}
+                  </g>
+                ))}
+              </svg>
+              <p class="small">1 square = 1%</p>
+            </div>
+          </div>
+
+          <div class="panel" role="tabpanel" id="p3-3" aria-labelledby="t3-3" hidden>
+            <div class="panel-text">
+              <div class="big">about 70%</div>
+              <p class="one">of femtech companies were founded or co-founded by women.<sup class="ref"><a href="#home-ref-2">[2]</a></sup></p>
+            </div>
+            <div class="panel-vis">
+              <svg viewBox="0 0 290 40" role="img" class="vis-svg people" aria-label="About 7 in 10 femtech companies were founded or co-founded by women">
+                {founders.map((c) => <use href="#person" x={c.x} class={c.on ? 'bar-a' : 'bar-bg'} />)}
+              </svg>
+            </div>
+          </div>
+
+          <div class="panel" role="tabpanel" id="p3-4" aria-labelledby="t3-4" hidden>
+            <div class="panel-text">
+              <div class="big">$15.7 billion</div>
+              <p class="one">New US government funding the National Academies recommend over five years.<sup class="ref"><a href="#home-ref-1">[1]</a></sup></p>
+            </div>
+            <div class="panel-vis">
+              <svg viewBox={`0 0 ${FUND_W} 30`} role="img" class="vis-svg" aria-label="Recommended funding: $4 billion, $11.4 billion and $315 million">
+                {fund.map((f) => <rect x={f.x} y="0" width={f.w} height="30" class={`bar-${f.kind}`} />)}
+              </svg>
+              <div class="bar-legend col">
+                {fund.map((f) => <span class={`key key-${f.kind}`}><strong>{f.label}</strong> {f.what}</span>)}
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="chap" data-n="4" id="path">
+      <div class="chap-body">
+        <p class="eyebrow">The path</p>
+        <h2 class="chap-h">How research becomes a product</h2>
+        <p class="path-cta">
+          <button type="button" class="btn primary reveal-companies">Reveal where the companies sit</button>
+        </p>
+        <ol class="track">
+          {
+            stages.map((st, i) => (
+              <li class={`node${st.companies.length ? ' has' : ''}`}>
+                <span class="dot">{i + 1}</span>
+                <span class="node-label">{st.label}</span>
+                <span class="slot">
+                  {st.companies.map((s) => (
+                    <a class="pin" href={`${base}/startups/${s.id}/`}>
+                      <strong>{s.data.name}</strong>
+                      <small>{s.data.areas.map((a) => AREA_LABEL[a]).join(', ')}</small>
+                    </a>
+                  ))}
+                  {st.companies.length === 0 && <span class="none">none yet</span>}
+                </span>
+              </li>
+            ))
+          }
+        </ol>
+        <p class="note">Shows where the public evidence is, not how good a company is.</p>
+      </div>
+    </section>
+
+    <section class="chap" data-n="5" id="find">
+      <div class="chap-body explore">
+        <p class="eyebrow">The companies</p>
+        <h2 class="chap-h">Explore an emerging women's health company</h2>
+        <div class="seg" role="group" aria-label="Browse by">
+          <button type="button" class="seg-btn" data-view="area" aria-pressed="true">By condition</button>
+          <button type="button" class="seg-btn" data-view="name" aria-pressed="false">By name</button>
+          <button type="button" class="seg-btn" data-view="tech" aria-pressed="false">By technology</button>
+        </div>
+
+        <div class="view" data-view="area">
+          <div class="area-grid">
+            {
+              byArea.filter((a) => a.items.length > 0).map((a) => (
+                <div class="area">
+                  <h3>
+                    <svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" set:html={AREA_ICON[a.id]} />
+                    {a.label} <span class="count">{a.items.length}</span>
+                  </h3>
+                  {a.items.map((s) => (
+                    <a class="card" href={`${base}/startups/${s.id}/`}>
+                      <strong>{s.data.name}</strong>
+                      {s.data.draft && <span class="badge">Draft</span>}
+                      <span class="card-sub">{s.data.summary}</span>
+                    </a>
+                  ))}
+                </div>
+              ))
+            }
+          </div>
+          <p class="empty-areas"><span class="note">No profiles yet:</span>
+            {byArea.filter((a) => a.items.length === 0).map((a) => (
+              <span class="tag"><svg class="ico sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" set:html={AREA_ICON[a.id]} />{a.label}</span>
+            ))}
+          </p>
+          <p class="note">A company that works on more than one condition appears under each of them.</p>
+        </div>
+
+        <div class="view" data-view="name" hidden>
+          <div class="card-grid">
+            {
+              startups.map((s) => (
+                <a class="card" href={`${base}/startups/${s.id}/`}>
+                  <strong>{s.data.name}</strong>
+                  {s.data.draft && <span class="badge">Draft</span>}
+                  <span class="card-sub">{s.data.summary}</span>
+                  <span class="card-tags">{s.data.areas.map((a) => <span class="tag">{AREA_LABEL[a]}</span>)}</span>
+                </a>
+              ))
+            }
+          </div>
+          {startups.length === 0 && <p class="note">No profiles yet.</p>}
+        </div>
+        <div class="view" data-view="tech" hidden>
+          <div class="area-grid">
+            {
+              byType.filter((t) => t.items.length > 0).map((t) => (
+                <div class="area">
+                  <h3>{t.label} <span class="count">{t.items.length}</span></h3>
+                  {t.items.map((s) => (
+                    <a class="card" href={`${base}/startups/${s.id}/`}>
+                      <strong>{s.data.name}</strong>
+                      {s.data.draft && <span class="badge">Draft</span>}
+                      <span class="card-sub">{s.data.technology}</span>
+                    </a>
+                  ))}
+                </div>
+              ))
+            }
+          </div>
+          <p class="empty-areas"><span class="note">No profiles yet:</span> {byType.filter((t) => t.items.length === 0).map((t) => <span class="tag">{t.label}</span>)}</p>
+        </div>
+        <p class="note"><a href={`${base}/criteria/`}>How I choose companies</a> · <a href={`${base}/glossary/`}>Glossary</a></p>
+      </div>
+    </section>
+  </div>
+
+  <section class="sources">
+    <h2>Sources</h2>
+    <ol class="refs">
+      {
+        refs.map((r, i) => (
+          <li id={`home-ref-${i + 1}`}>
+            {r.citation} <a href={r.url}>Link</a> <small>[{r.use}]</small>
+          </li>
+        ))
+      }
+    </ol>
+  </section>
+</Base>
+
+<style is:global>
+  /* hero */
+  .hero { padding: 3rem 0 3.5rem; }
+  .hero-text::before { content: ''; display: block; width: 4rem; height: 4px; background: var(--focus); border-radius: 2px; margin-bottom: 1.25rem; }
+  .eyebrow { text-transform: uppercase; letter-spacing: 0.12em; font-size: 0.78rem; font-weight: 700; color: var(--focus); margin: 0 0 0.6rem; }
+  .hero h1 { font-size: clamp(2.4rem, 5.5vw, 4.2rem); max-width: 18ch; }
+  .lede { max-width: 38rem; font-family: var(--serif); font-size: 1.4rem; color: var(--muted); margin-top: 0.5rem; }
+  .hero-links { display: flex; gap: 0.75rem; flex-wrap: wrap; margin-top: 1.5rem; }
+  .hero-links .btn { text-decoration: none; display: inline-block; }
+
+  /* the story timeline: one spine down the page */
+  .story { position: relative; padding-left: 5rem; }
+  .story::before { content: ''; position: absolute; left: 1.55rem; top: 0.5rem; bottom: 0; width: 4px; border-radius: 2px; background: var(--line); }
+  /* the colored part of the spine grows as you read down the page (set by the script below) */
+  .story::after { content: ''; position: absolute; left: 1.55rem; top: 0.5rem; width: 4px; border-radius: 2px;
+    height: calc((100% - 0.5rem) * var(--prog, 1)); background: linear-gradient(180deg, var(--accent), var(--focus)); }
+  .chap { position: relative; padding-bottom: 4.5rem; }
+  .chap::before { content: attr(data-n); position: absolute; left: -5rem; top: 0; width: 3.1rem; height: 3.1rem; border-radius: 50%;
+    display: flex; align-items: center; justify-content: center; background: var(--surface); border: 4px solid var(--accent);
+    font-family: var(--serif); font-weight: 700; font-size: 1.2rem; z-index: 1; transition: background 0.4s, color 0.4s; }
+  .chap:last-child::before, .chap:nth-child(5)::before { border-color: var(--focus); }
+  .js .chap.in::before { background: var(--accent); color: var(--accent-ink); }
+  .js .chap.in:last-child::before { background: var(--focus); }
+  .chap-h { font-size: clamp(1.7rem, 3.2vw, 2.5rem); line-height: 1.2; max-width: 30ch; margin-bottom: 1rem; }
+  .js .chap .chap-body { opacity: 0; transform: translateY(28px); transition: opacity 0.6s ease, transform 0.6s ease; }
+  .js .chap.in .chap-body { opacity: 1; transform: none; }
+  @media (prefers-reduced-motion: reduce) { .js .chap .chap-body { opacity: 1; transform: none; transition: none; } .js .chap .hb { transition: none; } }
+
+  /* chapter 1: big grids */
+  .grids { display: grid; gap: 2rem; grid-template-columns: repeat(auto-fit, minmax(13rem, 1fr)); margin-top: 1.25rem; }
+  .big-num { font-family: var(--serif); font-size: clamp(2.6rem, 5vw, 3.8rem); line-height: 1; color: var(--focus); }
+  .bar-of { font-weight: 600; font-size: 0.95rem; margin: 0.3rem 0 0.8rem; }
+  .waffle { width: 100%; max-width: 8rem; height: auto; display: block; }
+  .vis .waffle { max-width: 4.2rem; }
+  /* grid squares fill in, one after another, when the chapter scrolls into view */
+  .js .chap .waffle .fill { transform-box: fill-box; transform-origin: left; transform: scaleX(0); opacity: 0; transition: transform 0.35s ease, opacity 0.35s ease; }
+  .js .chap.in .waffle .fill { transform: none; opacity: 1; }
+  .people { max-width: 17rem; }
+  .ico { width: 1.5em; height: 1.5em; vertical-align: -0.3em; margin-right: 0.35em; color: var(--accent); }
+  .ico.sm { width: 1.1em; height: 1.1em; vertical-align: -0.2em; margin-right: 0.3em; }
+  .unit { display: inline-flex; align-items: center; gap: 0.4rem; margin-left: 0.75rem; }
+  .unit-sq { width: 0.9rem; height: 0.9rem; }
+
+  /* chapters 2 and 3: cards */
+  .vis-grid { display: grid; gap: 1.25rem; grid-template-columns: repeat(auto-fit, minmax(15rem, 1fr)); margin: 1.25rem 0; align-items: start; }
+  .vis-grid.two { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  @media (max-width: 44rem) { .vis-grid.two { grid-template-columns: 1fr; } }
+  .vis { background: var(--surface); border: 1px solid var(--line); border-radius: 18px; padding: 1.25rem 1.4rem; display: flex; flex-direction: column; gap: 0.7rem; }
+  .vis:nth-child(odd) { border-top: 4px solid var(--accent); }
+  .vis:nth-child(even) { border-top: 4px solid var(--focus); }
+  .vis-t { font-weight: 600; font-size: 0.95rem; line-height: 1.4; }
+  .big { font-family: var(--serif); font-size: 2.2rem; line-height: 1; color: var(--focus); white-space: nowrap; }
+  /* horizontal bars (chapter 2) */
+  .hbars, .hb-group { display: grid; gap: 0.4rem; }
+  .hb-group + .hb-group { margin-top: 0.6rem; }
+  .hb-name { font-weight: 600; font-size: 0.9rem; }
+  .hb-row { display: grid; grid-template-columns: 3.2rem 1fr auto; align-items: center; gap: 0.6rem; font-size: 0.9rem; }
+  .hb-track { height: 1.3rem; background: var(--line); border-radius: 6px; overflow: hidden; }
+  .hb { display: block; height: 100%; border-radius: 6px; }
+  .hb-b { background: var(--focus); }
+  .hb-m { background: var(--muted); }
+  .js .chap .hb { transform: scaleX(0); transform-origin: left; transition: transform 0.7s ease 0.2s; }
+  .js .chap.in .hb { transform: none; }
+  .hb-val { font-variant-numeric: tabular-nums; }
+  .vis-svg { width: 100%; height: auto; display: block; margin-top: 0.3rem; }
+  .gaps { list-style: none; padding: 0; margin: 1.5rem 0 0; display: grid; gap: 1rem; grid-template-columns: repeat(auto-fit, minmax(15rem, 1fr)); }
+  .gaps li { background: var(--plum-soft); border-radius: 14px; padding: 1rem 1.2rem; font-size: 0.95rem; line-height: 1.55; }
+  .lead { font-size: 1.15rem; max-width: 46rem; }
+
+  /* tabs: one stat at a time (without JavaScript every panel simply shows, stacked) */
+  .tabbar { display: flex; gap: 0.5rem; flex-wrap: wrap; margin: 0.5rem 0 1rem; }
+  .js .tab { font: inherit; font-size: 0.92rem; padding: 0.45rem 1rem; border-radius: 999px; border: 1.5px solid var(--line); background: var(--surface); color: var(--text); cursor: pointer; }
+  .js .tab:hover { border-color: var(--focus); }
+  .js .tab[aria-selected='true'] { background: var(--focus); border-color: var(--focus); color: var(--bg); }
+  .tabbar { display: none; }
+  .js .tabbar { display: flex; }
+  .panel { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 1.5rem 2.5rem; align-items: center;
+    background: var(--surface); border: 1px solid var(--line); border-radius: 20px; padding: 1.5rem 1.75rem; margin-bottom: 1rem; }
+  .panel[hidden] { display: none; }
+  .panel:not(:has(.panel-vis)) { grid-template-columns: 1fr; }
+  .panel .big { font-size: clamp(2.4rem, 5vw, 3.6rem); }
+  .one { font-size: 1.1rem; line-height: 1.45; margin: 0.6rem 0 0.5rem; }
+  .one.lone { margin-top: 0; font-family: var(--serif); font-size: 1.5rem; line-height: 1.3; }
+  .small { font-size: 0.82rem; color: var(--muted); line-height: 1.45; margin: 0.5rem 0 0; }
+  .more { margin-top: 0.4rem; font-size: 0.88rem; color: var(--muted); }
+  .more summary { cursor: pointer; color: var(--accent); width: fit-content; }
+  .more p { margin: 0.4rem 0 0; line-height: 1.5; }
+  .panel-vis .waffle { max-width: 4.5rem; }
+  @media (max-width: 44rem) { .panel { grid-template-columns: 1fr; padding: 1.25rem; } }
+  /* the bars and squares animate each time a panel is shown */
+  .js .chap .panel .hb { transform: scaleX(0); transform-origin: left; transition: transform 0.7s ease 0.15s; }
+  .js .chap.in .panel.on .hb { transform: none; }
+  .js .chap .panel .waffle .fill { transform: scaleX(0); opacity: 0; }
+  .js .chap.in .panel.on .waffle .fill { transform: none; opacity: 1; }
+  /* chart colors */
+  .bar-bg { fill: var(--line); }
+  .bar-a { fill: var(--accent); }
+  .bar-b { fill: var(--focus); }
+  .bar-c { fill: #b9822c; }
+  .bar-legend { font-size: 0.9rem; margin-top: 0.3rem; display: flex; gap: 1rem; flex-wrap: wrap; }
+  .bar-legend.col { flex-direction: column; gap: 0.3rem; }
+  .key::before { content: ''; display: inline-block; width: 0.8em; height: 0.8em; border-radius: 3px; margin-right: 0.4em; background: var(--accent); }
+  .key-b::before { background: var(--focus); }
+  .key-c::before { background: #b9822c; }
+
+  /* chapter 4: the path, with companies revealed on it */
+  .path-cta { margin: 0.5rem 0 1.5rem; }
+  .track { list-style: none; padding: 0; margin: 1rem 0 1rem; display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 0.75rem; position: relative; }
+  .track::before { content: ''; position: absolute; left: 8%; right: 8%; top: 1.6rem; height: 4px; background: linear-gradient(90deg, var(--accent), var(--focus)); border-radius: 2px; }
+  .node { position: relative; text-align: center; font-size: 0.9rem; line-height: 1.3; display: flex; flex-direction: column; align-items: center; }
+  .dot { display: flex; align-items: center; justify-content: center; width: 3.2rem; height: 3.2rem; margin-bottom: 0.7rem; border-radius: 50%;
+    background: var(--surface); border: 4px solid var(--accent); font-family: var(--serif); font-weight: 700; font-size: 1.1rem; position: relative; transition: background 0.3s, color 0.3s; }
+  .node:last-child .dot { border-color: var(--focus); }
+  .slot { margin-top: 1rem; width: 100%; min-height: 4rem; }
+  .pin { display: block; text-align: left; background: var(--surface); border: 2px solid var(--focus); border-radius: 14px; padding: 0.7rem 0.8rem;
+    color: var(--text); text-decoration: none; box-shadow: 0 10px 24px -14px rgba(35, 28, 38, 0.5); }
+  .pin small { display: block; color: var(--muted); font-size: 0.78rem; margin-top: 0.2rem; }
+  .none { display: block; color: var(--muted); font-size: 0.8rem; padding: 0.7rem 0; border: 2px dashed var(--line); border-radius: 14px; }
+  /* with JavaScript the companies start hidden, and the button reveals them */
+  .track::after { content: ''; position: absolute; left: 8%; top: 1.6rem; height: 4px; border-radius: 2px; background: var(--focus);
+    width: calc(84% * var(--p, 0)); transition: width 0.45s ease; }
+  .js .track .node:not(.lit) .slot { visibility: hidden; }
+  .js .node.lit .dot { background: var(--accent); color: var(--accent-ink); }
+  .js .node.lit .pin { animation: pop 0.5s ease both; }
+  .js .node.lit.has .dot { background: var(--focus); border-color: var(--focus); color: #fff; }
+  @keyframes pop { from { opacity: 0; transform: translateY(14px) scale(0.96); } to { opacity: 1; transform: none; } }
+  @media (max-width: 52rem) {
+    .track { grid-template-columns: 1fr; }
+    .track::before, .track::after { display: none; }
+    .node { flex-direction: row; flex-wrap: wrap; text-align: left; gap: 0.75rem; align-items: center; }
+    .dot { margin-bottom: 0; }
+    .slot { margin-top: 0; flex-basis: 100%; min-height: 0; padding-left: 4rem; }
+  }
+
+  /* chapter 5: find a company */
+  .seg { display: inline-flex; border: 1.5px solid var(--accent); border-radius: 999px; overflow: hidden; margin: 0.5rem 0 1.25rem; }
+  .seg-btn { font: inherit; font-size: 0.95rem; padding: 0.5rem 1.2rem; border: 0; background: transparent; color: var(--accent); cursor: pointer; }
+  .seg-btn[aria-pressed='true'] { background: var(--accent); color: var(--accent-ink); }
+  .view[hidden] { display: none; }
+  .area-grid, .card-grid { display: grid; gap: 1.25rem; grid-template-columns: repeat(auto-fill, minmax(18rem, 1fr)); }
+  .card-grid { gap: 0.75rem; }
+  .card-grid .card { margin-bottom: 0; }
+  .area h3 { font-size: 1.1rem; margin: 0 0 0.4rem; }
+  .area .card { border-left: 4px solid var(--accent); }
+  .empty-areas { margin-top: 1.25rem; }
+  .count { display: inline-block; min-width: 1.4em; text-align: center; font-size: 0.8rem; border-radius: 999px; background: var(--accent-soft); padding: 0 0.4em; }
+  .card { display: block; padding: 0.9rem 1.1rem; margin-bottom: 0.6rem; background: var(--surface); border: 1px solid var(--line);
+    border-radius: 14px; color: var(--text); text-decoration: none; }
+  .card:hover { border-color: var(--accent); }
+  .card-sub { display: block; color: var(--muted); font-size: 0.92rem; margin-top: 0.2rem; }
+  .card-tags { display: block; margin-top: 0.4rem; }
+  .badge { margin-left: 0.5rem; font-size: 0.75rem; border: 1px solid var(--line); border-radius: 999px; padding: 0 0.5rem; color: var(--muted); }
+  .sources { margin-top: 1rem; }
+
+  @media (max-width: 40rem) {
+    .story { padding-left: 3.4rem; }
+    .story::before { left: 0.95rem; }
+    .chap::before { left: -3.4rem; width: 2.4rem; height: 2.4rem; font-size: 1rem; }
+  }
+</style>
+
+<script is:inline>
+  (function () {
+    // Browse by condition or by name.
+    var btns = document.querySelectorAll('.seg-btn');
+    var views = document.querySelectorAll('.explore .view');
+    function show(v) {
+      Array.prototype.forEach.call(btns, function (b) { b.setAttribute('aria-pressed', b.getAttribute('data-view') === v ? 'true' : 'false'); });
+      Array.prototype.forEach.call(views, function (el) { el.hidden = el.getAttribute('data-view') !== v; });
+      try { history.replaceState(null, '', v === 'name' ? '#by-name' : v === 'tech' ? '#by-technology' : '#find'); } catch (e) {}
+    }
+    Array.prototype.forEach.call(btns, function (b) { b.addEventListener('click', function () { show(b.getAttribute('data-view')); }); });
+    if (location.hash === '#by-name') show('name');
+    if (location.hash === '#by-technology') show('tech');
+
+    // Tabs: one stat at a time.
+    Array.prototype.forEach.call(document.querySelectorAll('[data-tabs]'), function (root) {
+      var tabs = Array.prototype.slice.call(root.querySelectorAll('[role=tab]'));
+      var panels = tabs.map(function (t) { return document.getElementById(t.getAttribute('aria-controls')); });
+      function select(i, focus) {
+        tabs.forEach(function (t, n) {
+          var on = n === i;
+          t.setAttribute('aria-selected', on ? 'true' : 'false');
+          t.tabIndex = on ? 0 : -1;
+          panels[n].classList.remove('on');
+          panels[n].hidden = !on;
+        });
+        void panels[i].offsetWidth; // let the bars grow again from zero
+        panels[i].classList.add('on');
+        if (focus) tabs[i].focus();
+      }
+      tabs.forEach(function (t, n) {
+        t.addEventListener('click', function () { select(n, false); });
+        t.addEventListener('keydown', function (e) {
+          if (e.key === 'ArrowRight') { e.preventDefault(); select((n + 1) % tabs.length, true); }
+          if (e.key === 'ArrowLeft') { e.preventDefault(); select((n + tabs.length - 1) % tabs.length, true); }
+        });
+      });
+      select(0, false);
+    });
+
+    // Reveal the companies on the path.
+    var rb = document.querySelector('.reveal-companies');
+    if (rb) rb.addEventListener('click', function () {
+      var track = document.querySelector('.track');
+      var nodes = track.querySelectorAll('.node');
+      var reduce = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+      track.classList.add('revealed');
+      rb.parentNode.hidden = true;
+      // Walk along the path one stop at a time; companies appear when the walk reaches their stop.
+      Array.prototype.forEach.call(nodes, function (n, i) {
+        setTimeout(function () {
+          n.classList.add('lit');
+          track.style.setProperty('--p', String(i / (nodes.length - 1)));
+        }, reduce ? 0 : 500 * i);
+      });
+    });
+
+    // Colored part of the spine follows the reader down the page.
+    var story = document.querySelector('.story');
+    function spine() {
+      var r = story.getBoundingClientRect();
+      var p = (window.innerHeight * 0.6 - r.top) / r.height;
+      story.style.setProperty('--prog', String(Math.max(0, Math.min(1, p))));
+    }
+    if (story) { spine(); window.addEventListener('scroll', spine, { passive: true }); window.addEventListener('resize', spine); }
+
+    // Chapters fade in as you scroll to them.
+    var chaps = document.querySelectorAll('.chap');
+    if (!('IntersectionObserver' in window)) { Array.prototype.forEach.call(chaps, function (c) { c.classList.add('in'); }); return; }
+    var io = new IntersectionObserver(function (entries) {
+      entries.forEach(function (e) { if (e.isIntersecting) { e.target.classList.add('in'); io.unobserve(e.target); } });
+    }, { rootMargin: '0px 0px -12% 0px' });
+    Array.prototype.forEach.call(chaps, function (c) { io.observe(c); });
+  })();
+</script>

@@ -1,0 +1,8 @@
+[
+  { "id": "none-public", "label": "Nothing public yet", "blurb": "No lab data, trial or regulatory record that I could find." },
+  { "id": "lab-unpublished", "label": "Lab data, not peer reviewed", "blurb": "The company reports its own lab results, not yet checked by outside reviewers." },
+  { "id": "lab-peer-reviewed", "label": "Lab data, peer reviewed", "blurb": "Lab results published in a journal after review by outside experts." },
+  { "id": "pilot", "label": "Pilot or small human study", "blurb": "A small first test in people." },
+  { "id": "registered-trial", "label": "Registered clinical trial", "blurb": "A trial listed in a public registry such as ClinicalTrials.gov." },
+  { "id": "cleared", "label": "Cleared or authorized", "blurb": "A regulator has cleared or authorized it for use." }
+]

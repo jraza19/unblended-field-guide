@@ -1,0 +1,276 @@
+---
+import { getCollection, render } from 'astro:content';
+import Base from '../../layouts/Base.astro';
+import { AREA_LABEL, EVIDENCE_BASIS_LABEL, PRODUCT_CHECK_LABEL, REF_USE_LABEL } from '../../lib/labels';
+
+// Draft profiles are built only while developing, or when PUBLIC_SHOW_DRAFTS=1 is set for a
+// local review build. The live site never includes them.
+export async function getStaticPaths() {
+  const all = await getCollection('startups');
+  return all
+    .filter((s) => import.meta.env.DEV || import.meta.env.PUBLIC_SHOW_DRAFTS === '1' || !s.data.draft)
+    .map((entry) => ({ params: { id: entry.id }, props: { entry } }));
+}
+
+const { entry } = Astro.props;
+const d = entry.data;
+const { Content } = await render(entry);
+const basis = EVIDENCE_BASIS_LABEL[d.evidenceBasis];
+const base = import.meta.env.BASE_URL.replace(/\/$/, '');
+---
+
+<Base title={d.name}>
+  <p class="note">
+    Public evidence as of {d.lastChecked.toISOString().slice(0, 10)}. A description, not a judgment of the company
+    or a recommendation.
+    {d.draft && <strong> Draft: not yet verified, not shown on the live site.</strong>}
+    {!d.draft && d.reviewNote && <strong> {d.reviewNote}</strong>}
+  </p>
+
+  <h1>{d.name}</h1>
+
+  <p>
+    {d.areas.map((a) => <span class="tag">{AREA_LABEL[a]}</span>)}
+    <span class="tag">{d.type}</span>
+    <span class="tag">{d.country}</span>
+    {d.foundedYear && <span class="tag">Founded {d.foundedYear}</span>}
+    <span class="tag tag-where" title={basis.text}>{basis.label}</span>
+    <a href={`${base}/criteria/#tags`}><small>What does this tag mean?</small></a>
+  </p>
+
+  <div class="profile">
+    <Content />
+
+    <section class="step" id="step-sources" data-step="sources" data-label="Sources">
+      <h2>Sources and how I found it</h2>
+      <p class="note">
+        <strong>How I found it:</strong> {d.howFound}<br />
+        <strong>My relationship to the company:</strong> {d.relationship}<br />
+        {d.fundingNote && (
+          <><strong>Funding:</strong> {d.fundingNote}{d.fundingRefs.map((id) => { const n = d.references.findIndex((r) => r.id === id) + 1; return <sup class="ref"><a href={`#ref-${n}`}>[{n}]</a></sup>; })}<br /></>
+        )}
+        <a href={`${base}/criteria/`}>How I choose companies</a>
+      </p>
+      <ol class="refs">
+        {
+          d.references.map((r, i) => (
+            <li id={`ref-${i + 1}`}>
+              {r.citation} <a href={r.url}>Link</a> <small>[{REF_USE_LABEL[r.use]}]</small>
+              {r.note && <><br /><small>{r.note}</small></>}
+            </li>
+          ))
+        }
+      </ol>
+    </section>
+  </div>
+</Base>
+
+<style is:global>
+  /* The opening animation on a profile: the problem, then milk -> proteins -> peptides -> insert.
+     About 28 s, then it rests. The base styles are the finished picture, so reduced-motion readers see that. */
+  .scene { margin: 1rem 0 0; }
+  .sc-svg { width: 100%; height: auto; display: block; background: var(--bg); border-radius: 14px; }
+  .sc-lab, .sc-key, .sc-big { fill: var(--text); text-anchor: middle; font: 600 15px/1 ui-sans-serif, system-ui, sans-serif; }
+  .sc-key { text-anchor: start; font-size: 14px; }
+  .sc-big { font: 700 46px/1 'Iowan Old Style', Palatino, Georgia, serif; fill: var(--focus); }
+  .sc-drop { fill: #fff7e6; stroke: var(--accent); stroke-width: 3; }
+  .sc-protc { fill: var(--focus); opacity: 0.85; }
+  .sc-seg, .sc-bead { fill: #b9822c; stroke: var(--surface); stroke-width: 1.5; }
+  .sc-chain { fill: none; stroke: #b9822c; stroke-width: 2.5; }
+  .sc-body { fill: var(--accent); opacity: 0.35; }
+  .sc-stripe { fill: var(--focus); opacity: 0.75; }
+  .sc-out { fill: none; stroke: var(--text); stroke-width: 2; opacity: 0.7; }
+  .sc-rod { fill: var(--accent); }
+  .sc-dot { fill: var(--focus); transform-box: fill-box; transform-origin: center; }
+  .sc-pg { fill: var(--line); }
+  .sc-pp { fill: var(--focus); }
+  .sc-track { fill: none; stroke: var(--line); stroke-width: 18; }
+  .sc-arc { fill: none; stroke: var(--focus); stroke-width: 18; stroke-linecap: round; stroke-dasharray: 452.4; stroke-dashoffset: 190; }
+
+  /* base = end state */
+  .sc-a, .sc-b, .sc-ring { opacity: 0; }
+  .sc-milk { transform: translate(110px, 190px); opacity: 0; }
+  .sc-lab-milk, .sc-lab-prot, .sc-lab-pep { opacity: 0; }
+  .sc-prot { transform: translate(var(--tx), var(--ty)); opacity: 0; }
+  .sc-pep { transform: translate(var(--ex), var(--ey)); opacity: 0; }
+  .sc-cap { transform: translate(400px, 190px) scale(1.35); }
+  .sc-lab-ins { opacity: 1; }
+  .sc-caps { position: relative; min-height: 7.5rem; margin-top: 0.75rem; }
+  .sc-c { position: absolute; inset: 0 0 auto 0; margin: 0; font-size: 1.05rem; line-height: 1.5; opacity: 0; }
+  .sc-c7 { opacity: 1; }
+
+  /* problem scenes: bacteria 0-5 s, people 5-10 s, ring 10-15 s */
+  .sc-a { animation: sc-fade .5s ease .2s both, sc-gone .4s ease 4.8s forwards; }
+  .sc-rod-go { animation: sc-gone .6s ease var(--o) forwards; }
+  .sc-dot:not(.sc-dot-static) { animation: sc-pop .5s ease var(--d) backwards; }
+  .sc-b { animation: sc-fade .5s ease 5s both, sc-gone .4s ease 9.6s forwards; }
+  .sc-pp { opacity: 0; animation: sc-fade .4s ease var(--d) both; }
+  .sc-lab-b { animation: sc-fade .5s ease 7.6s backwards; }
+  .sc-ring { animation: sc-fade .5s ease 10s both, sc-gone .4s ease 14.6s forwards; }
+  .sc-arc { animation: sc-draw 1.6s ease 10.6s backwards; }
+  .sc-num, .sc-lab-c { animation: sc-fade .5s ease 11.4s backwards; }
+
+  /* the milk story starts at 15 s */
+  .sc-milk { animation: sc-milk-in 1.2s ease 15.3s both, sc-gone .8s ease 24.2s forwards; }
+  .sc-lab-milk { animation: sc-fade .6s ease 16s both, sc-gone .8s ease 24.2s forwards; }
+  .sc-prot { animation: sc-prot-in 1.2s ease var(--d) both, sc-gone .8s ease 24.2s forwards; }
+  .sc-lab-prot { animation: sc-fade .6s ease 19.4s both, sc-gone .8s ease 24.2s forwards; }
+  .sc-seg { transform-box: fill-box; transform-origin: center; animation: sc-pulse .7s ease 20.4s backwards; }
+  .sc-pep { animation: sc-pep-go 2.4s ease var(--d) both, sc-gone .5s ease 24.8s forwards; }
+  .sc-lab-pep { animation: sc-fade .6s ease 21.6s both, sc-gone .5s ease 24.8s forwards; }
+  .sc-cap { animation: sc-cap-in 1.6s cubic-bezier(0.2, 0.9, 0.3, 1.2) 24.6s backwards; }
+  .sc-stripes { animation: sc-spin 2.4s linear 25.4s infinite; }
+  .sc-lab-ins { animation: sc-fade .6s ease 26.2s backwards; }
+  .sc-c1 { animation: sc-c1 28s linear both; }
+  .sc-c2 { animation: sc-c2 28s linear both; }
+  .sc-c3 { animation: sc-c3 28s linear both; }
+  .sc-c4 { animation: sc-c4 28s linear both; }
+  .sc-c5 { animation: sc-c5 28s linear both; }
+  .sc-c6 { animation: sc-c6 28s linear both; }
+  .sc-c7 { animation: sc-fade .6s ease 27.6s backwards; }
+
+  @keyframes sc-fade { from { opacity: 0; } to { opacity: 1; } }
+  @keyframes sc-gone { from { opacity: 1; } to { opacity: 0; } }
+  @keyframes sc-pop { from { opacity: 0; transform: scale(0); } to { opacity: 1; transform: scale(1); } }
+  @keyframes sc-draw { from { stroke-dashoffset: 452.4; } to { stroke-dashoffset: 190; } }
+  @keyframes sc-milk-in { from { opacity: 0; transform: translate(110px, 190px) scale(0.3); } to { opacity: 1; transform: translate(110px, 190px) scale(1); } }
+  @keyframes sc-prot-in { from { opacity: 0; transform: translate(110px, 190px) scale(0.1); } to { opacity: 1; transform: translate(var(--tx), var(--ty)) scale(1); } }
+  @keyframes sc-pulse { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.8); } }
+  @keyframes sc-pep-go {
+    0% { opacity: 0; transform: translate(var(--sx), var(--sy)) scale(0.4); }
+    15% { opacity: 1; transform: translate(var(--sx), var(--sy)) scale(1); }
+    100% { opacity: 1; transform: translate(var(--ex), var(--ey)) scale(0.8); }
+  }
+  @keyframes sc-cap-in { from { opacity: 0; transform: translate(400px, 190px) scale(0.2); } to { opacity: 1; transform: translate(400px, 190px) scale(1.35); } }
+  @keyframes sc-spin { from { transform: translateY(0); } to { transform: translateY(28px); } }
+  @keyframes sc-c1 { 0% { opacity: 0; } 1.43% { opacity: 1; } 16.43% { opacity: 1; } 17.86%, 100% { opacity: 0; } }
+  @keyframes sc-c2 { 0%, 17.86% { opacity: 0; } 19.29% { opacity: 1; } 34.29% { opacity: 1; } 35.71%, 100% { opacity: 0; } }
+  @keyframes sc-c3 { 0%, 35.71% { opacity: 0; } 37.14% { opacity: 1; } 52.14% { opacity: 1; } 53.57%, 100% { opacity: 0; } }
+  @keyframes sc-c4 { 0%, 53.57% { opacity: 0; } 55.00% { opacity: 1; } 72.86% { opacity: 1; } 74.29%, 100% { opacity: 0; } }
+  @keyframes sc-c5 { 0%, 74.29% { opacity: 0; } 75.71% { opacity: 1; } 86.43% { opacity: 1; } 87.86%, 100% { opacity: 0; } }
+  @keyframes sc-c6 { 0%, 87.86% { opacity: 0; } 89.29% { opacity: 1; } 97.14% { opacity: 1; } 98.57%, 100% { opacity: 0; } }
+  @media (prefers-reduced-motion: reduce) { .scene * { animation: none !important; } }
+</style>
+
+<script is:inline>
+  (function () {
+    // Guess first, then reveal.
+    document.addEventListener('click', function (e) {
+      var rp = e.target.closest && e.target.closest('.scene-replay');
+      if (rp) {
+        // Swap in a fresh copy so every animation restarts from the beginning.
+        var scene = rp.closest('.scene');
+        scene.parentNode.replaceChild(scene.cloneNode(true), scene);
+        return;
+      }
+      var ch = e.target.closest && e.target.closest('.choice');
+      if (ch) {
+        var qz = ch.closest('.quiz');
+        var right = qz.getAttribute('data-correct');
+        Array.prototype.forEach.call(qz.querySelectorAll('.choice'), function (b) {
+          b.classList.toggle('chosen', b === ch);
+          b.classList.toggle('correct', b.getAttribute('data-k') === right);
+          b.setAttribute('aria-pressed', b === ch ? 'true' : 'false');
+        });
+        var fbs = qz.querySelectorAll('.fb');
+        Array.prototype.forEach.call(fbs, function (f) { f.hidden = f.getAttribute('data-for') !== ch.getAttribute('data-k'); });
+        qz.querySelector('.quiz-fb').hidden = false;
+        return;
+      }
+      var rb = e.target.closest && e.target.closest('.reveal-btn');
+      if (rb) {
+        rb.hidden = true;
+        rb.parentNode.querySelector('.reveal-a').hidden = false;
+        return;
+      }
+      var st = e.target.closest && e.target.closest('.stage');
+      if (st) {
+        var w = st.closest('.path-widget');
+        var answer = w.getAttribute('data-answer');
+        var answerLabel = w.getAttribute('data-answer-label');
+        Array.prototype.forEach.call(w.querySelectorAll('.stage'), function (b) {
+          b.classList.toggle('chosen', b === st);
+          b.classList.toggle('answer', b.getAttribute('data-stage') === answer);
+          b.setAttribute('aria-pressed', b === st ? 'true' : 'false');
+        });
+        var same = st.getAttribute('data-stage') === answer;
+        w.querySelector('.path-lead').textContent = same
+          ? 'You chose “' + answerLabel + '”. That matches where the public evidence puts it.'
+          : 'You chose “' + st.textContent + '”. Based on public evidence, I place it at “' + answerLabel + '”.';
+        w.querySelector('.path-feedback').hidden = false;
+      }
+    });
+
+    // The click-through deck. Without JavaScript every step simply shows in order.
+    var root = document.querySelector('.profile');
+    if (!root) return;
+    var steps = Array.prototype.slice.call(root.querySelectorAll(':scope > .step'));
+    if (steps.length < 2) return;
+    root.classList.add('deck-on');
+
+    var top = document.createElement('div');
+    top.className = 'deck-top';
+    top.innerHTML = '<div class="bar"><span></span></div><span class="count" aria-live="polite"></span>' +
+      '<button type="button" class="linklike toggle">Show all on one page</button>';
+    var nav = document.createElement('div');
+    nav.className = 'deck-nav';
+    nav.innerHTML = '<button type="button" class="btn prev">Back</button><div class="dots"></div>' +
+      '<button type="button" class="btn primary next">Next</button>';
+    root.insertBefore(top, root.firstChild);
+    root.appendChild(nav);
+
+    var dots = nav.querySelector('.dots');
+    steps.forEach(function (s, i) {
+      var b = document.createElement('button');
+      b.type = 'button';
+      b.setAttribute('aria-label', 'Step ' + (i + 1) + ': ' + s.getAttribute('data-label'));
+      b.addEventListener('click', function () { go(i, true); });
+      dots.appendChild(b);
+    });
+
+    var idx = 0;
+    function go(i, focus) {
+      idx = Math.max(0, Math.min(steps.length - 1, i));
+      steps.forEach(function (s, n) { s.classList.toggle('current', n === idx); });
+      Array.prototype.forEach.call(dots.children, function (b, n) {
+        if (n === idx) b.setAttribute('aria-current', 'step'); else b.removeAttribute('aria-current');
+      });
+      top.querySelector('.bar span').style.width = ((idx + 1) / steps.length * 100) + '%';
+      top.querySelector('.count').textContent = 'Step ' + (idx + 1) + ' of ' + steps.length + ' · ' + steps[idx].getAttribute('data-label');
+      nav.querySelector('.prev').disabled = idx === 0;
+      nav.querySelector('.next').disabled = idx === steps.length - 1;
+      try { history.replaceState(null, '', '#step-' + steps[idx].getAttribute('data-step')); } catch (e) {}
+      if (focus) {
+        var h = steps[idx].querySelector('h2');
+        if (h) { h.setAttribute('tabindex', '-1'); h.focus({ preventScroll: true }); }
+        root.scrollIntoView({ block: 'start' });
+      }
+    }
+    nav.querySelector('.prev').addEventListener('click', function () { go(idx - 1, true); });
+    nav.querySelector('.next').addEventListener('click', function () { go(idx + 1, true); });
+    top.querySelector('.toggle').addEventListener('click', function (e) {
+      var all = root.classList.toggle('show-all');
+      nav.hidden = all;
+      e.target.textContent = all ? 'Step through' : 'Show all on one page';
+    });
+    document.addEventListener('keydown', function (e) {
+      if (e.metaKey || e.ctrlKey || e.altKey || root.classList.contains('show-all')) return;
+      var t = e.target.tagName;
+      if (t === 'INPUT' || t === 'TEXTAREA' || t === 'SELECT') return;
+      if (e.key === 'ArrowRight') go(idx + 1, true);
+      if (e.key === 'ArrowLeft') go(idx - 1, true);
+    });
+    // A citation number jumps to the sources step.
+    root.addEventListener('click', function (e) {
+      var a = e.target.closest && e.target.closest('sup.ref a');
+      if (!a) return;
+      e.preventDefault();
+      var target = document.querySelector(a.getAttribute('href'));
+      go(steps.length - 1, false);
+      if (target) target.scrollIntoView({ block: 'center' });
+    });
+    var start = 0;
+    steps.forEach(function (s, n) { if (location.hash === '#step-' + s.getAttribute('data-step')) start = n; });
+    go(start, false);
+  })();
+</script>
