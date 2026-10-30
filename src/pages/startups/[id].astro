@@ -61,7 +61,7 @@ const base = import.meta.env.BASE_URL.replace(/\/$/, '');
     or a recommendation.
     {d.draft && <strong> Draft: not yet verified, not shown on the live site.</strong>}
     {!d.draft && d.reviewNote && <strong> {d.reviewNote}</strong>}
-    <a href={`${base}/criteria/#tags`}>What does the tag mean?</a>
+    {' '}<a href={`${base}/criteria/#tags`}>What does the tag mean?</a>
   </p>
 </Base>
 

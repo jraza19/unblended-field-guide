@@ -26,8 +26,10 @@ const base = import.meta.env.BASE_URL.replace(/\/$/, '');
         --bg: #17141b; --surface: #211d27; --text: #f1edf5; --muted: #a59fb0;
         --line: #373040; --accent: #5fd0c3; --accent-ink: #10201e; --accent-soft: #1d3330; --focus: #e3a0c6; --plum-soft: #33232d;
       }
+      /* Everything is sized in rem, so this one line scales the whole site. It was 100% (16px). */
+      html { font-size: 90%; }
       * { box-sizing: border-box; }
-      body { font: 18px/1.65 ui-sans-serif, system-ui, -apple-system, 'Segoe UI', sans-serif; margin: 0;
+      body { font: 1.125rem/1.6 ui-sans-serif, system-ui, -apple-system, 'Segoe UI', sans-serif; margin: 0;
         padding: 0 1rem; background: var(--bg); color: var(--text); }
       main { max-width: var(--w, 42rem); margin: 0 auto; padding-block: 1rem 4rem; }
       nav { max-width: var(--w, 42rem); margin: 0 auto; padding-block: 1rem; display: flex; gap: 1.25rem; flex-wrap: wrap; font-size: 0.95rem; }
@@ -109,7 +111,7 @@ const base = import.meta.env.BASE_URL.replace(/\/$/, '');
       .small { font-size: 0.82rem; color: var(--muted); }
     </style>
   </head>
-  <body style={`--w: ${wide ? '72rem' : '42rem'}`}>
+  <body style={`--w: ${wide ? '1152px' : '672px'}`}>
     <header class="site-head">
       <nav>
         <a class="brand" href={`${base}/`}>A Field Guide to Women's Health Tech</a>
