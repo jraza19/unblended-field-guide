@@ -15,4 +15,5 @@ export const AREA_ICON: Record<string, string> = {
     '<path d="M7 17L17 7"/><circle cx="6" cy="19" r="1.8"/><circle cx="4.5" cy="17" r="1.8"/><circle cx="18" cy="5" r="1.8"/><circle cx="19.5" cy="7" r="1.8"/>',
   'vaginal-urogenital': '<path d="M5 19c0-8 6-14 14-14 0 8-6 14-14 14z"/><path d="M5 19l8-8"/>',
   'sexual-wellness': '<circle cx="9" cy="12" r="6"/><circle cx="15" cy="12" r="6"/>',
+  'multiple-conditions': '<circle cx="7" cy="7" r="2.5"/><circle cx="17" cy="7" r="2.5"/><circle cx="7" cy="17" r="2.5"/><circle cx="17" cy="17" r="2.5"/><circle cx="12" cy="12" r="2.5"/>',
 };

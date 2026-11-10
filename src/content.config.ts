@@ -2,7 +2,7 @@ import { defineCollection } from 'astro:content';
 import { glob } from 'astro/loaders';
 import { z } from 'astro/zod';
 
-// The 11 condition areas. Companies can carry several.
+// The 11 condition areas plus 'multiple-conditions' for platforms that span many. Companies can carry several.
 export const AREAS = [
   'pcos',
   'endometriosis',
@@ -15,6 +15,7 @@ export const AREAS = [
   'osteoporosis',
   'vaginal-urogenital',
   'sexual-wellness',
+  'multiple-conditions',
 ] as const;
 
 // Description 1: where the support for the approach comes from.

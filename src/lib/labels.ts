@@ -42,6 +42,7 @@ export const AREA_LABEL: Record<string, string> = {
   osteoporosis: 'Osteoporosis',
   'vaginal-urogenital': 'Vaginal & urogenital health',
   'sexual-wellness': 'Sexual wellness',
+  'multiple-conditions': 'Many conditions',
 };
 
 // Broad kind of product, for the "By technology" view.

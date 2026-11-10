@@ -3,7 +3,7 @@ name: Xella Health
 summary: "A women's health membership: a blood test across 100+ markers, AI interpretation and telehealth care. It launched in June 2026 with $4.7M reported. No published validation of the test was found."
 website: https://xellahealth.com/
 country: United States
-areas: [pcos, endometriosis, menopause, infertility, menstrual-health]
+areas: [multiple-conditions]
 type: platform
 technology: Blood tests across 100+ markers, interpreted by AI, with telehealth care
 fundingStage: pre-seed
