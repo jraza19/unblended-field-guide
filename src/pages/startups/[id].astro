@@ -69,6 +69,11 @@ const base = import.meta.env.BASE_URL.replace(/\/$/, '');
   .p-name { text-align: center; margin-top: 1.5rem; }
   .p-tags { text-align: center; }
   .p-foot { margin-top: 2rem; }
+  /* "What they say / what I found" table on profiles without an animated intro */
+  .claims { width: 100%; border-collapse: collapse; margin: 1rem 0; font-size: 0.95rem; line-height: 1.5; }
+  .claims th { text-align: left; font-weight: 600; color: var(--muted); padding: 0 0.75rem 0.4rem 0; border-bottom: 2px solid var(--line); }
+  .claims td { vertical-align: top; padding: 0.7rem 0.75rem 0.7rem 0; border-bottom: 1px solid var(--line); width: 50%; }
+  @media (max-width: 40rem) { .claims, .claims tbody, .claims tr, .claims td { display: block; width: auto; } .claims thead { display: none; } .claims td:first-child { border-bottom: 0; padding-bottom: 0; font-weight: 600; } }
   /* The opening animation on a profile: the problem, then milk -> proteins -> peptides -> insert.
      About 28 s, then it rests. The base styles are the finished picture, so reduced-motion readers see that. */
   .scene { margin: 1rem 0 0; }
@@ -152,6 +157,31 @@ const base = import.meta.env.BASE_URL.replace(/\/$/, '');
   @keyframes sc-c4 { 0%, 53.57% { opacity: 0; } 55.00% { opacity: 1; } 72.86% { opacity: 1; } 74.29%, 100% { opacity: 0; } }
   @keyframes sc-c5 { 0%, 74.29% { opacity: 0; } 75.71% { opacity: 1; } 86.43% { opacity: 1; } 87.86%, 100% { opacity: 0; } }
   @keyframes sc-c6 { 0%, 87.86% { opacity: 0; } 89.29% { opacity: 1; } 97.14% { opacity: 1; } 98.57%, 100% { opacity: 0; } }
+  /* Shared helpers for the other profiles' intro scenes. A scene is a set of phases; each phase fades in
+     at --s and out at --e (the last phase never leaves). The base styles are the finished picture. */
+  .v-ph { opacity: 0; animation: sc-fade .5s ease var(--s) both, sc-gone .5s ease var(--e) forwards; }
+  .v-ph.v-last { opacity: 1; animation: sc-fade .5s ease var(--s) backwards; }
+  .v-cap { opacity: 0; animation: sc-fade .5s ease var(--s) both, sc-gone .5s ease var(--e) forwards; }
+  .v-cap.v-last { opacity: 1; animation: sc-fade .5s ease var(--s) backwards; }
+  .v-pop { transform-box: fill-box; transform-origin: center; animation: sc-pop .5s ease var(--d) backwards; }
+  .v-fade { animation: sc-fade .6s ease var(--d) backwards; }
+  .v-draw { stroke-dasharray: var(--len); animation: v-draw var(--t, 1.5s) ease var(--d) backwards; }
+  .v-ring { fill: none; stroke: var(--focus); stroke-width: 3; opacity: 0; transform-box: fill-box; transform-origin: center; animation: v-ring 2.7s ease-out var(--d) infinite; }
+  .v-move { animation: v-move var(--t, 1.4s) ease var(--d) backwards; }
+  .v-fill { fill: var(--focus); }
+  .v-person { fill: var(--line); }
+  .v-sm { font-size: 13px; }
+  .v-badge { fill: #b9822c; }
+  .v-badge-t { fill: #fff; text-anchor: middle; font: 700 15px/1 ui-sans-serif, system-ui, sans-serif; }
+  .v-ink { fill: none; stroke: var(--text); stroke-width: 2.5; opacity: 0.75; stroke-linecap: round; stroke-linejoin: round; }
+  .v-accent { fill: var(--accent); opacity: 0.3; stroke: var(--accent); stroke-width: 3; }
+  .v-focus-line { fill: none; stroke: var(--focus); stroke-width: 3.5; stroke-linecap: round; stroke-linejoin: round; }
+  .v-chip { fill: var(--surface); stroke: var(--line); stroke-width: 2; }
+  .v-chip-on { fill: var(--plum-soft); stroke: var(--focus); stroke-width: 2.5; }
+  .v-dim { opacity: 0.55; }
+  @keyframes v-draw { from { stroke-dashoffset: var(--len); } to { stroke-dashoffset: 0; } }
+  @keyframes v-ring { 0% { opacity: 0.7; transform: scale(0.8); } 100% { opacity: 0; transform: scale(2.3); } }
+  @keyframes v-move { from { transform: translate(var(--fx), var(--fy)); } to { transform: translate(var(--tx), var(--ty)); } }
   @media (prefers-reduced-motion: reduce) { .scene * { animation: none !important; } }
 </style>
 

@@ -116,6 +116,19 @@ The authors call the planned insert "first-in-class."{{ref:paper}}
 
 That is a lab result, not a result in patients.
 
+<!-- step: numbers | The numbers -->
+
+## What do the numbers show?
+
+<table class="claims">
+<thead><tr><th>Measure</th><th>What the public record shows</th></tr></thead>
+<tbody>
+<tr><td><strong>Growth</strong><br>Funding, users, revenue</td><td>Sources disagree. A 2022 magazine article reported about $1.1M raised (company-reported).{{ref:comstocks}} PitchBook lists $130K.{{ref:pitchbook}} The paper names an NIH SBIR Phase 1 award.{{ref:sbir}} No product is on sale, so there is no revenue.{{ref:ct-search}}</td></tr>
+<tr><td><strong>Unit economics</strong><br>Price, cost, margin</td><td>Not applicable yet. No product is approved, and a drug search found no match.{{ref:ct-search}} Cost to make the peptides, price and margin: not established.</td></tr>
+<tr><td><strong>Product signals</strong><br>Evidence that people use it or that it works</td><td>In lab tests, three of the four peptides killed BV-linked bacteria while sparing the protective species tested.{{ref:paper}} The paper reports no animal or human data.{{ref:paper}} The 2022 article said the company hoped to seek FDA approval within two years. I found no filing.{{ref:comstocks}}{{ref:ct-search}}</td></tr>
+</tbody>
+</table>
+
 <!-- step: path | Where it sits -->
 
 ## Where does it sit on the path to a product?
