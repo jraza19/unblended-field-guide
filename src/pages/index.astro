@@ -425,7 +425,7 @@ const stages = PATH_STAGES.map((st) => ({ ...st, companies: startups.filter((s) 
                     <a class="card" href={`${base}/startups/${s.id}/`}>
                       <strong>{s.data.name}</strong>
                       {s.data.draft && <span class="badge">Draft</span>}
-                      <span class="card-sub">{s.data.summary}</span>
+                      <span class="card-sub">{s.data.technology}</span>
                     </a>
                   ))}
                 </div>
@@ -437,7 +437,7 @@ const stages = PATH_STAGES.map((st) => ({ ...st, companies: startups.filter((s) 
               <span class="tag"><svg class="ico sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" set:html={AREA_ICON[a.id]} />{a.label}</span>
             ))}
           </p>
-          <p class="note">A company that works on more than one condition appears under each of them.</p>
+          <p class="note">A company that works on one or two conditions appears under each. One that covers many is grouped under "Many conditions".</p>
         </div>
 
         <div class="view" data-view="name" hidden>
